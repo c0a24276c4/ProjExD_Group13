@@ -31,7 +31,7 @@ class Bird:
     """
     delta = {  # 押下キーと移動量の辞書
         pg.K_LEFT: (-1, 0),
-        pg.K_RIGHT: (+1, 0),
+        pg.K_RIGHT: (1, 0),
         pg.K_SPACE: (0, ),
     }
     img0 = pg.transform.rotozoom(pg.image.load("fig/2.png"), 0, 0.7)
@@ -41,7 +41,7 @@ class Bird:
         (-1, 0): img,  # 左
     }
 
-    gravity = +0.1 
+    gravity = +0.05
 
     def __init__(self, xy: tuple[int, int]):
         """
@@ -52,8 +52,10 @@ class Bird:
         self.rct: pg.Rect = self.img.get_rect()
         self.rct.center = xy
         self.jump_state = False
-        self.jump_high = -4
-
+        self.sky_state = False
+        self.jump_high = -1
+        self.sky_high = 0
+        
     def change_img(self, num: int, screen: pg.Surface):
         """
         こうかとん画像を切り替え，画面に転送する
@@ -78,22 +80,29 @@ class Bird:
                     self.img = __class__.img0
                 if key_lst[k] and k == pg.K_LEFT:
                     self.img = __class__.img
-            elif key_lst[k] and k == pg.K_SPACE:
+            elif key_lst[k] and k == pg.K_SPACE and self.sky_state:  # スペースキーを押した場合ジャンプ判定をTrueにする
                 self.jump_state = True
-        if self.jump_state:
+                self.sky_state = False
+        if self.jump_state:  # ジャンプ判定がTrueの場合
             sum_mv[1] += self.jump_high
             self.jump_high += __class__.gravity
+        if not self.sky_state:  # 床にいるかの判定
+            print("a")
+            sum_mv[1] += self.sky_high
+            self.sky_high += __class__.gravity
+        else:
+            self.sky_high = 0
         self.rct.move_ip(sum_mv)
-        if check_bound(self.rct) != (True, True):
+        if check_bound(self.rct) != (True, True):  # 四方に飛んだ場合
             self.rct.move_ip(-sum_mv[0], -sum_mv[1])
-            self.jump_state = False
-            self.jump_high = -4
+            # self.jump_state = False
+            # self.jump_high = -4
         # if not (sum_mv[0] == 0 and sum_mv[1] == 0):
         #     self.img = __class__.imgs[tuple(sum_mv)]
         screen.blit(self.img, self.rct)
 
 
-class wall(pg.sprite.Sprite):
+class Wall(pg.sprite.Sprite):
     """
     足場に関するクラス
     """
@@ -104,24 +113,38 @@ class wall(pg.sprite.Sprite):
         self.rect.left = x
         self.rect.top = y
 
-
+    def wall_bound(self,obj_rct: pg.Rect) -> tuple[bool, bool]:
+        """
+        引数：こうかとんのRect
+        戻り値：ブロックに乗っているのかの判定結果（画面内：True/画面外：False）
+        """
+        #print(obj_rct.bottom,self.rect.top)
+        ue = False
+        if obj_rct.bottom-self.rect.top<=5:
+            ue = True
+            # print(" obj_rct.bottom > self.rect.top")
+        return ue
+    
 
 def main():
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.transform.rotozoom(pg.image.load(f"fig/back.webp"), 0, 1.3)
     walls = pg.sprite.Group()
     clock = pg.time.Clock()
-    bird = Bird((300, 200))
+    bird = Bird((100, 100))
     hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)
     for i in range(8):
-        walls.add(wall(i*90, 630))
+        walls.add(Wall(i*90, 630))
     for i in range(6):
-        walls.add(wall(i*90, 500))
+        walls.add(Wall(i*90, 500))
     for i in range(6):
-        walls.add(wall(120+i*90, 360))
+        walls.add(Wall(120+i*90, 360))
     for i in range(6):
-        walls.add(wall(i*90, 220))
-    walls.add(wall(200, 120))
+        walls.add(Wall(i*90, 220))
+    walls.add(Wall(200, 120))
+
+
+    # print(walls)
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -133,6 +156,33 @@ def main():
         screen.blit(hashigo, [200, 390])
         screen.blit(hashigo, [480, 250])
         screen.blit(hashigo, [210, 130])
+        bird.sky_state = False
+        for i,wall in enumerate(walls):  # 床の情報を取得
+            if wall.rect.colliderect(bird.rct):  # 床のrectとこうかとんのrectのが重なっているのかの判定
+                # print(i)
+                if wall.wall_bound(bird.rct):  # 床にいるのか判定
+                    bird.jump_high = -4
+                    bird.jump_state = False
+                    bird.sky_state = True
+
+            #     bird.sky_high = 0
+            #     bird.sky_state = False
+            #     print("a")
+
+                # bird.sky_state = True
+        #     bird.sky_high = 0
+            #else:
+        #     print("b")
+                # bird.sky_state = False
+            # else:
+                # print("a")
+        #     # Fall()
+        #     # print("c")
+        #     bird.sky_high += 0.1
+        #     bird.sky_state = True
+        #     print(bird.sky_high)
+            # bird.rct.move_ip([0, bird.sky_high])
+            # screen.blit(bird.img, bird.rct)
 
             
         walls.draw(screen)
