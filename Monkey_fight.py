@@ -119,7 +119,7 @@ def main():
     walls = pg.sprite.Group()
     clock = pg.time.Clock()
     bird = Bird((300, 200))
-    hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)
+    hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)  # 梯子を獲得
 
     ladder_rects = [
         hashigo.get_rect(topleft=(480, 530)),
