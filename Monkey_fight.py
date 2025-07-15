@@ -120,8 +120,6 @@ class Bird:
     
         if check_bound(self.rct) != (True, True):  # 四方に飛んだ場合
             self.rct.move_ip(-sum_mv[0], -sum_mv[1])
-            # self.jump_state = False
-            # self.jump_high = -4
 
         screen.blit(self.img, self.rct)
 
@@ -226,8 +224,6 @@ class taru(pg.sprite.Sprite):
         super().__init__()
         self.image = pg.transform.rotozoom(pg.image.load(f"fig/taru.png"),0, 0.05)
         self.rct = self.image.get_rect()
-        #self.rct.width = 10 # 敵の攻撃(樽)の当たり判定
-        #self.rct.height = 10
         self.rct.left = gorilla.rct.centerx #敵の攻撃(樽)の初期位置
         self.rct.bottom = gorilla.rct.bottom+16
         self.vx = +3 # 敵の攻撃(樽)の移動スピード
@@ -305,10 +301,6 @@ def main():
         for lad in ladder_rects:
             screen.blit(hashigo, lad.topleft)
 
-        # screen.blit(hashigo, [480, 500])
-        # screen.blit(hashigo, [200, 360])
-        # screen.blit(hashigo, [480, 220])
-        # screen.blit(hashigo, [210, 100])
 
         bird.sky_state = False
         for i,wall in enumerate(walls):  # 床の情報を取得
