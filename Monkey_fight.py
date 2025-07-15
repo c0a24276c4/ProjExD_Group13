@@ -105,6 +105,23 @@ class wall(pg.sprite.Sprite):
         self.rect.top = y
 
 
+class Score:
+    """
+    スコアを表示するクラス
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (255, 255, 0)
+        self.value = 0
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, HEIGHT-630
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+
 
 def main():
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -112,6 +129,7 @@ def main():
     walls = pg.sprite.Group()
     clock = pg.time.Clock()
     bird = Bird((300, 200))
+    score = Score()
     hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)
     for i in range(8):
         walls.add(wall(i*90, 630))
@@ -137,6 +155,7 @@ def main():
             
         walls.draw(screen)
         bird.update(key_lst, screen)
+        score.update(screen)
         pg.display.update()
         clock.tick(50)
 
