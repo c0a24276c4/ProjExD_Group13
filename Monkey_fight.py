@@ -105,6 +105,22 @@ class wall(pg.sprite.Sprite):
         self.rect.top = y
 
 
+def game_end(screen: pg.Surface, msg: str, color: tuple[int, int, int]): # ゲームクリア、オーバー設定
+    over = pg.Surface((WIDTH, HEIGHT))
+    over.set_alpha(200)
+    over.fill((0, 0, 0))
+    screen.blit(over, (0, 0))
+
+    font = pg.font.Font(None, 80)
+    txt = font.render(msg, True, color)
+    txt_rct = txt.get_rect()
+    txt_rct.center = WIDTH // 2, HEIGHT // 2
+    screen.blit(txt, txt_rct)
+
+    pg.display.update()
+    time.sleep(3)
+    pg.quit()
+
 
 def main():
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -128,6 +144,11 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_o:
+                    game_end(screen, "Game Over", (255, 0, 0)) #oキーを押すとゲームオーバー
+                elif event.key == pg.K_c:
+                    game_end(screen, "Game Clear", (0, 255, 0)) #cキーを押すとゲームオーバー
         screen.blit(bg_img, [0, 0])
         screen.blit(hashigo, [480, 530])
         screen.blit(hashigo, [200, 390])
