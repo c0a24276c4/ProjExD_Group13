@@ -17,10 +17,12 @@ def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     引数：こうかとんや爆弾，ビームなどのRect
     戻り値：横方向，縦方向のはみ出し判定結果（画面内：True／画面外：False）
     """
-    yoko = True
+    yoko, tate = True, True
     if obj_rct.left < 0 or WIDTH < obj_rct.right:
         yoko = False
-    return yoko
+    if obj_rct.top < 0 or HEIGHT < obj_rct.bottom:
+        tate = False
+    return yoko, tate
 
 
 class Bird:
@@ -75,13 +77,14 @@ class Bird:
             for k, mv in __class__.delta.items():
                 if key_lst[k] and k != pg.K_SPACE and k not in [pg.K_UP, pg.K_DOWN]:
                     sum_mv[0] += mv[0]
+                    print(mv)
                 if k == pg.K_RIGHT:
                     self.img = __class__.img0
                 if k == pg.K_LEFT:
                     self.img = __class__.img
                 elif key_lst[k] and k == pg.K_SPACE:
                     self.jump_state = True
-                    self.sky_state - False
+                    self.sky_state = False
             if self.jump_state:
                 sum_mv[1] += self.jump_high
                 self.jump_high += __class__.gravity
@@ -199,7 +202,7 @@ class taru(pg.sprite.Sprite):
         """
         引数1 screen：画面Surface
         """
-        yoko = check_bound(self.rct) # 講義で使ったチェックバウンドを横判定だけにしたもので判別
+        yoko, tate = check_bound(self.rct) # 講義で使ったチェックバウンドを横判定だけにしたもので判別
         if not yoko:
             self.vx *= -1
         self.rct.move_ip(self.vx, 0) # 横移動だけ更新
@@ -211,9 +214,13 @@ def main():
     bg_img = pg.transform.rotozoom(pg.image.load(f"fig/back.webp"), 0, 1.3)
     walls = pg.sprite.Group()
     clock = pg.time.Clock()
-    bird = Bird((100, 100))
+    bird = Bird((300, 500))
     score = Score()
     hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)  # 梯子を獲得
+    gorilla = enemy()
+    tarus = pg.sprite.Group()
+    tarus.add(taru(gorilla))
+    tmr = 0
 
     ladder_rects = [
         hashigo.get_rect(topleft=(480, 530)),
@@ -231,13 +238,6 @@ def main():
     for i in range(6):
         walls.add(Wall(i*90, 220))
     walls.add(Wall(200, 120))
-    clock = pg.time.Clock()
-    bird = Bird((300, 200))
-    hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)
-    gorilla = enemy()
-    tarus = pg.sprite.Group()
-    tarus.add(taru(gorilla))
-    tmr = 0
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -275,7 +275,7 @@ def main():
         if gorilla.rct.colliderect(bird.rct):  # ゴリラとあたったら終了
             return 0 
         
-        tarus.draw(screen)
+        tarus.update(screen)
         screen.blit(gorilla.image, [15, 63])
         walls.draw(screen)
         bird.update(key_lst, screen, ladder_rects)
