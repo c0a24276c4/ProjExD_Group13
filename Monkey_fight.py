@@ -98,10 +98,10 @@ class Bird:
                 if key_lst[k] and k != pg.K_SPACE and k not in [pg.K_UP, pg.K_DOWN]:
                     sum_mv[0] += mv[0]
                     #print(mv)
-                if k == pg.K_RIGHT:
-                    self.img = __class__.img0
-                if k == pg.K_LEFT:
-                    self.img = __class__.img
+                    if k == pg.K_RIGHT:
+                        self.img = __class__.img0
+                    if k == pg.K_LEFT:
+                        self.img = __class__.img
                 elif key_lst[k] and k == pg.K_SPACE:
                     self.jump_state = True
                     self.sky_state = False
@@ -263,23 +263,24 @@ def main():
     bg_img = pg.transform.rotozoom(pg.image.load(f"fig/back.webp"), 0, 1.3)
     walls = pg.sprite.Group()
     clock = pg.time.Clock()
-    bird = Bird((450, 100))  #100 605
+    bird = Bird((100, 605))  #100 605
     score = Score()
     hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo4.png"), 0, 0.085)  # 梯子を獲得
     takara = pg.transform.rotozoom(pg.image.load(f"fig/takara.png"), 0, 0.05)  # 宝を獲得
     takara_rect = takara.get_rect()
     takara_rect.center = 220, 40
-    print(takara_rect)
+    #print(takara_rect)
     gorilla = enemy()
     tarus = pg.sprite.Group()
     tarus.add(taru(gorilla))
     tmr = 0  
     timer = Timer()  
+    it = 200
 
     ladder_rects = [
         hashigo.get_rect(topleft=(480, 500)),
-        hashigo.get_rect(topleft=(200, 360)),
-        hashigo.get_rect(topleft=(480, 220)),
+        hashigo.get_rect(topleft=(200, 365)),
+        hashigo.get_rect(topleft=(480, 225)),
         hashigo.get_rect(topleft=(210, 90))
     ]
 
@@ -332,12 +333,13 @@ def main():
                 game_end(screen, "Game Over",(255, 0, 0)) #oキーを押すとゲームオーバー
                 return 0
         if takara_rect.colliderect(bird.rct):
-            print("a")
+            #print("a")
             score_screen("Clear", score.value, screen, timer.value)
             game_end(screen, "Game Clear", (0, 255, 0)) #cキーを押すとゲームクリア
             return 0
-        if tmr%200 == 0:  # 200フレームに1回，ゴリラの攻撃(樽)を出現させる
+        if tmr%it == 0:  # 200フレームに1回，ゴリラの攻撃(樽)を出現させる
             tarus.add(taru(gorilla))
+            it = random.randint(100, 250)
         if gorilla.rct.colliderect(bird.rct):  # ゴリラとあたったら終了
             score_screen("a", score.value, screen, timer.value)
             game_end(screen, "Game Over", (255, 0, 0)) #oキーを押すとゲームオーバー
