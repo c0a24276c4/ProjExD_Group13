@@ -34,9 +34,9 @@ class Bird:
     }
     img0 = pg.transform.rotozoom(pg.image.load("fig/2.png"), 0, 0.7)
     img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん（右向き）
-    imgs = {  # 0度から反時計回りに定義
-        (+2, 0): img0,  # 右
-        (-2, 0): img,  # 左
+    imgs = {  # 0度から反時計回りに定
+        (+1, 0): img0,  # 右
+        (-1, 0): img,  # 左
     }
 
     gravity = +0.05
@@ -46,7 +46,7 @@ class Bird:
         こうかとん画像Surfaceを生成する
         引数 xy：こうかとん画像の初期位置座標タプル
         """
-        self.img = __class__.imgs[(+2, 0)]
+        self.img = __class__.imgs[(+1, 0)]
         self.rect: pg.Rect = self.img.get_rect()
         self.rect.center = xy
         self.jump_state = False
@@ -90,9 +90,9 @@ class Bird:
             self.sky_high += __class__.gravity
         else:
             self.sky_high = 0
-        self.rct.move_ip(sum_mv)
-        if check_bound(self.rct) != (True, True):  # 四方に飛んだ場合
-            self.rct.move_ip(-sum_mv[0], -sum_mv[1])
+        self.rect.move_ip(sum_mv)
+        if check_bound(self.rect) != (True, True):  # 四方に飛んだ場合
+            self.rect.move_ip(-sum_mv[0], -sum_mv[1])
             # self.jump_state = False
             # self.jump_high = -4
         # if not (sum_mv[0] == 0 and sum_mv[1] == 0):
@@ -171,7 +171,7 @@ def main():
     bg_img = pg.transform.rotozoom(pg.image.load(f"fig/back.webp"), 0, 1.3)
     walls = pg.sprite.Group()
     clock = pg.time.Clock()
-    bird = Bird((100, 100))
+    bird = Bird((500, 500))
     hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)
     for i in range(8):
         walls.add(Wall(i*90, 630))
@@ -180,8 +180,8 @@ def main():
     for i in range(6):
         walls.add(Wall(120+i*90, 360))
     for i in range(6):
-        walls.add(wall(i*90, 220))
-    walls.add(wall(200, 120))
+        walls.add(Wall(i*90, 220))
+    walls.add(Wall(200, 120))
     clock = pg.time.Clock()
     bird = Bird((300, 200))
     hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)
@@ -202,9 +202,9 @@ def main():
         screen.blit(hashigo, [210, 130])
         bird.sky_state = False
         for i,wall in enumerate(walls):  # 床の情報を取得
-            if wall.rect.colliderect(bird.rct):  # 床のrectとこうかとんのrectのが重なっているのかの判定
+            if wall.rect.colliderect(bird.rect):  # 床のrectとこうかとんのrectのが重なっているのかの判定
                 # print(i)
-                if wall.wall_bound(bird.rct):  # 床にいるのか判定
+                if wall.wall_bound(bird.rect):  # 床にいるのか判定
                     bird.jump_high = -4
                     bird.jump_state = False
                     bird.sky_state = True
