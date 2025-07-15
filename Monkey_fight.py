@@ -83,7 +83,7 @@ class Bird:
                     self.img = __class__.img
                 elif key_lst[k] and k == pg.K_SPACE:
                     self.jump_state = True
-                    self.sky_state - False
+                    self.sky_state = False
             if self.jump_state:
                 sum_mv[1] += self.jump_high
                 self.jump_high += __class__.gravity
