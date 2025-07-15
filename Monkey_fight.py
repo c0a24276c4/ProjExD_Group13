@@ -29,25 +29,23 @@ class Bird:
     """
     ゲームキャラクター（こうかとん）に関するクラス
     """
-    delta = {  # 押下キーと移動量の辞書
+    delta = {
         pg.K_LEFT: (-1, 0),
         pg.K_RIGHT: (1, 0),
-        pg.K_SPACE: (0, ),
+        pg.K_SPACE: (0,),
+        pg.K_UP: (0, -2),
+        pg.K_DOWN: (0, 2)
     }
     img0 = pg.transform.rotozoom(pg.image.load("fig/2.png"), 0, 0.7)
-    img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん（右向き）
-    imgs = {  # 0度から反時計回りに定義
-        (+1, 0): img0,  # 右
-        (-1, 0): img,  # 左
+    img = pg.transform.flip(img0, True, False)
+    imgs = {
+        (+1, 0): img0,
+        (-1, 0): img,
     }
 
     gravity = +0.05
 
     def __init__(self, xy: tuple[int, int]):
-        """
-        こうかとん画像Surfaceを生成する
-        引数 xy：こうかとん画像の初期位置座標タプル
-        """
         self.img = __class__.imgs[(+1, 0)]
         self.rct: pg.Rect = self.img.get_rect()
         self.rct.center = xy
@@ -55,51 +53,61 @@ class Bird:
         self.sky_state = False
         self.jump_high = -1
         self.sky_high = 0
-        
+        self.on_ladder = False
+
     def change_img(self, num: int, screen: pg.Surface):
-        """
-        こうかとん画像を切り替え，画面に転送する
-        引数1 num：こうかとん画像ファイル名の番号
-        引数2 screen：画面Surface
-        """
         self.img = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 0.9)
         screen.blit(self.img, self.rct)
 
-    def update(self, key_lst: list[bool], screen: pg.Surface):
-        """
-        押下キーに応じてこうかとんを移動させる
-        引数1 key_lst：押下キーの真理値リスト
-        引数2 screen：画面Surface
-        """
+    def update(self, key_lst: list[bool], screen: pg.Surface, ladder_rects: list[pg.Rect]):
         sum_mv = [0, 0]
-        for k, mv in __class__.delta.items():
-            if key_lst[k] and k != pg.K_SPACE:
-                sum_mv[0] += mv[0]
-                sum_mv[1] += mv[1]
-                if key_lst[k] and k == pg.K_RIGHT:
-                    self.img = __class__.img0
-                if key_lst[k] and k == pg.K_LEFT:
-                    self.img = __class__.img
-            elif key_lst[k] and k == pg.K_SPACE and self.sky_state:  # スペースキーを押した場合ジャンプ判定をTrueにする
-                self.jump_state = True
-                self.sky_state = False
-        if self.jump_state:  # ジャンプ判定がTrueの場合
-            sum_mv[1] += self.jump_high
-            self.jump_high += __class__.gravity
-        if not self.sky_state:  # 床にいるかの判定
-            print("a")
-            sum_mv[1] += self.sky_high
-            self.sky_high += __class__.gravity
+    
+    # 「↑キーが押されていて、かつはしごに重なっている」場合だけ登り判定を有効にする
+        if key_lst[pg.K_UP]:
+            self.on_ladder = any(self.rct.colliderect(lad) for lad in ladder_rects)
         else:
-            self.sky_high = 0
+            self.on_ladder = False
+
+        if self.on_ladder:
+            sum_mv[1] = -2
+            self.jump_state = False
+            self.jump_high = -4
+        else:
+            # 横移動と画像切替（通常どおり）
+            for k, mv in __class__.delta.items():
+                if key_lst[k] and k != pg.K_SPACE and k not in [pg.K_UP, pg.K_DOWN]:
+                    sum_mv[0] += mv[0]
+                if k == pg.K_RIGHT:
+                    self.img = __class__.img0
+                if k == pg.K_LEFT:
+                    self.img = __class__.img
+                elif key_lst[k] and k == pg.K_SPACE:
+                    self.jump_state = True
+                    self.sky_state - False
+            if self.jump_state:
+                sum_mv[1] += self.jump_high
+                self.jump_high += __class__.gravity
+            if not self.sky_state:  # 床にいるかの判定
+                print("a")
+                sum_mv[1] += self.sky_high
+                self.sky_high += __class__.gravity
+            else:
+                self.sky_high = 0
+
+        # ↓キーで降りる（常に許可）
+        if key_lst[pg.K_DOWN]:
+            sum_mv[1] += 2
+
         self.rct.move_ip(sum_mv)
+    
         if check_bound(self.rct) != (True, True):  # 四方に飛んだ場合
             self.rct.move_ip(-sum_mv[0], -sum_mv[1])
             # self.jump_state = False
             # self.jump_high = -4
-        # if not (sum_mv[0] == 0 and sum_mv[1] == 0):
-        #     self.img = __class__.imgs[tuple(sum_mv)]
+
         screen.blit(self.img, self.rct)
+
+
 
 
 class Wall(pg.sprite.Sprite):
@@ -158,7 +166,6 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
-
 def main():
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.transform.rotozoom(pg.image.load(f"fig/back.webp"), 0, 1.3)
@@ -166,7 +173,15 @@ def main():
     clock = pg.time.Clock()
     bird = Bird((100, 100))
     score = Score()
-    hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)
+    hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)  # 梯子を獲得
+
+    ladder_rects = [
+        hashigo.get_rect(topleft=(480, 530)),
+        hashigo.get_rect(topleft=(200, 390)),
+        hashigo.get_rect(topleft=(480, 250)),
+        hashigo.get_rect(topleft=(210, 130))
+    ]
+
     for i in range(8):
         walls.add(Wall(i*90, 630))
     for i in range(6):
@@ -190,7 +205,11 @@ def main():
                     game_end(screen, "Game Over", (255, 0, 0)) #oキーを押すとゲームオーバー
                 elif event.key == pg.K_c:
                     game_end(screen, "Game Clear", (0, 255, 0)) #cキーを押すとゲームオーバー
+
         screen.blit(bg_img, [0, 0])
+        for lad in ladder_rects:
+            screen.blit(hashigo, lad.topleft)
+
         screen.blit(hashigo, [480, 530])
         screen.blit(hashigo, [200, 390])
         screen.blit(hashigo, [480, 250])
@@ -225,10 +244,11 @@ def main():
 
             
         walls.draw(screen)
-        bird.update(key_lst, screen)
+        bird.update(key_lst, screen, ladder_rects)
         score.update(screen)
         pg.display.update()
         clock.tick(50)
+
 
 if __name__ == "__main__":
     pg.init()
