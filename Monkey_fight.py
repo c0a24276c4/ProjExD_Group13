@@ -177,8 +177,9 @@ def main():
         screen.blit(hashigo, [480, 250])
         screen.blit(hashigo, [210, 130])
 
-        for i in pg.sprite.spritecollide(bird, tarus, True):  # 樽とあたったら終了
-            return 0
+        for i, taru1 in enumerate(tarus):  # 樽とあたったら終了
+            if taru1.rect.colliderect(bird.rect):
+                return 0
         if tmr%200 == 0:  # 200フレームに1回，ゴリラの攻撃(樽)を出現させる
             tarus.add(taru(gorilla))
         if gorilla.rect.colliderect(bird.rect):  # ゴリラとあたったら終了
