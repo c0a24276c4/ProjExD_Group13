@@ -77,13 +77,14 @@ class Bird:
             for k, mv in __class__.delta.items():
                 if key_lst[k] and k != pg.K_SPACE and k not in [pg.K_UP, pg.K_DOWN]:
                     sum_mv[0] += mv[0]
+                    print(mv)
                 if k == pg.K_RIGHT:
                     self.img = __class__.img0
                 if k == pg.K_LEFT:
                     self.img = __class__.img
                 elif key_lst[k] and k == pg.K_SPACE:
                     self.jump_state = True
-                    self.sky_state - False
+                    self.sky_state = False
             if self.jump_state:
                 sum_mv[1] += self.jump_high
                 self.jump_high += __class__.gravity
@@ -115,6 +116,10 @@ class Wall(pg.sprite.Sprite):
     足場に関するクラス
     """
     def __init__(self, x: int, y: int):
+        """
+        引数1 x：足場を表示する左上x座標
+        引数2 y：足場を表示する左上y座標
+        """
         super().__init__()
         self.image = pg.transform.rotozoom(pg.image.load(f"fig/brick_wall_3x.png"), 0, 0.08)
         self.rect = self.image.get_rect()
@@ -158,22 +163,64 @@ class Score:
         self.color = (255, 255, 0)
         self.value = 0
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
-        self.rect = self.image.get_rect()
-        self.rect.center = 100, HEIGHT-630
+        self.rct = self.image.get_rect()
+        self.rct.center = 100, HEIGHT-630
 
     def update(self, screen: pg.Surface):
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
-        screen.blit(self.image, self.rect)
+        screen.blit(self.image, self.rct)
 
+
+class enemy:
+    """
+    敵に関するクラス
+    """
+    def __init__(self):
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/gorira.png"), 0, 0.2)
+        self.rct = self.image.get_rect()
+    
+
+class taru(pg.sprite.Sprite):
+    """
+    敵の攻撃(樽)に関するクラス
+    """
+    def __init__(self, gorilla: "enemy"):
+        """
+        引数1 gorilla：攻撃を出す対象
+        """
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/taru.png"),0, 0.05)
+        self.rct = self.image.get_rect()
+        self.rct.width = 10 # 敵の攻撃(樽)の当たり判定
+        self.rct.height = 10
+        self.rct.left = gorilla.rct.centerx #敵の攻撃(樽)の初期位置
+        self.rct.bottom = gorilla.rct.bottom+16
+        self.vx = +3 # 敵の攻撃(樽)の移動スピード
+
+    def update(self, screen: pg.Surface):
+        """
+        引数1 screen：画面Surface
+        """
+        yoko, tate = check_bound(self.rct) # 講義で使ったチェックバウンドを横判定だけにしたもので判別
+        if not yoko:
+            self.vx *= -1
+        self.rct.move_ip(self.vx, 0) # 横移動だけ更新
+        screen.blit(self.image, self.rct)
+    
 
 def main():
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.transform.rotozoom(pg.image.load(f"fig/back.webp"), 0, 1.3)
     walls = pg.sprite.Group()
     clock = pg.time.Clock()
-    bird = Bird((100, 100))
+    bird = Bird((300, 500))
     score = Score()
     hashigo = pg.transform.rotozoom(pg.image.load(f"fig/hashigo.png"), 0, 0.085)  # 梯子を獲得
+    gorilla = enemy()
+    tarus = pg.sprite.Group()
+    tarus.add(taru(gorilla))
+    tmr = 0
 
     ladder_rects = [
         hashigo.get_rect(topleft=(480, 530)),
@@ -191,9 +238,6 @@ def main():
     for i in range(6):
         walls.add(Wall(i*90, 220))
     walls.add(Wall(200, 120))
-
-
-    # print(walls)
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -223,30 +267,21 @@ def main():
                     bird.jump_state = False
                     bird.sky_state = True
 
-            #     bird.sky_high = 0
-            #     bird.sky_state = False
-            #     print("a")
-
-                # bird.sky_state = True
-        #     bird.sky_high = 0
-            #else:
-        #     print("b")
-                # bird.sky_state = False
-            # else:
-                # print("a")
-        #     # Fall()
-        #     # print("c")
-        #     bird.sky_high += 0.1
-        #     bird.sky_state = True
-        #     print(bird.sky_high)
-            # bird.rct.move_ip([0, bird.sky_high])
-            # screen.blit(bird.img, bird.rct)
-
-            
+        for i, taru1 in enumerate(tarus):  # 樽とあたったら終了
+            if taru1.rct.colliderect(bird.rct):
+                return 0
+        if tmr%200 == 0:  # 200フレームに1回，ゴリラの攻撃(樽)を出現させる
+            tarus.add(taru(gorilla))
+        if gorilla.rct.colliderect(bird.rct):  # ゴリラとあたったら終了
+            return 0 
+        
+        tarus.update(screen)
+        screen.blit(gorilla.image, [15, 63])
         walls.draw(screen)
         bird.update(key_lst, screen, ladder_rects)
         score.update(screen)
         pg.display.update()
+        tmr += 1
         clock.tick(50)
 
 
